@@ -1,21 +1,19 @@
+import bean.Region;
+import bean.WeatherIndex;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.FileUtils;
-import util.HttpUtil;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.io.File;
+import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import static util.CommonUtil.sleep;
 import static util.JDBCUtil.closeConn;
-import static util.JDBCUtil.getConn;
+import static util.JDBCUtil.execQuery;
 
 /**
  * @Author: Avalon
@@ -28,36 +26,49 @@ public class sheshiyuanyi {
     static String getWeatherData = "http://data.sheshiyuanyi.com/WeatherData/php/getWeatherData.php?action=";
 
     public static void main(String[] args) {
+        List<Region> regionList = region();
+        List<WeatherIndex> weatherIndices = weatherIndex();
+        for (int i = 0; i < regionList.size(); i++) {
+            int id = regionList.get(i).getStationId();
+            System.out.println("id: " + id);
 
-        JSONObject jsonObject = JSONObject.parseObject(HttpUtil.httpGet(URL, "UTF-8"));
-        JSONArray stations = jsonObject.getJSONArray("stations");
+            for (WeatherIndex weatherIndex : weatherIndices) {
 
-        for (int i = 0; i < stations.size(); i++) {
-            JSONObject stationsInf = stations.getJSONObject(i);
-
-            String sql = "insert into region(station_id, province_name, station_name, latitude, longitude, elevation) VALUES (?,?,?,?,?,?)";
-            Connection conn = getConn();
-            PreparedStatement pst = null;
-            try {
-                conn.setAutoCommit(false);
-                pst = conn.prepareStatement(sql);
-
-                pst.setString(1, stationsInf.getString("station_id"));
-                pst.setString(2, stationsInf.getString("province_name"));
-                pst.setString(3, stationsInf.getString("station_name"));
-                pst.setString(4, stationsInf.getString("latitude"));
-                pst.setString(5, stationsInf.getString("longitude"));
-                pst.setString(6, stationsInf.getString("elevation"));
-
-                pst.execute();
-                conn.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } finally {
-                closeConn();
+                for (int j = 1984; j <= 2018; j++) {
+                    System.out.println(j);
+                    System.out.println(getWeatherData+id);
+                }
             }
         }
 
+
+    }
+
+    /**
+     * 获取 地区数据
+     *
+     * @return
+     */
+    public static List<Region> region() {
+        List<Region> regionList = new ArrayList<>();
+        ResultSet rs = execQuery("SELECT * FROM region");
+        try {
+            while (rs.next()) {
+                Region region = new Region();
+                region.setStationId(rs.getInt("station_id"));
+                region.setProvinceName(rs.getString("province_name"));
+                region.setStationName(rs.getString("station_name"));
+                region.setLatitude(rs.getFloat("latitude"));
+                region.setLongitude(rs.getFloat("longitude"));
+                region.setElevation(rs.getInt("elevation"));
+                regionList.add(region);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeConn();
+        }
+        return regionList;
     }
 
     /**
@@ -65,7 +76,7 @@ public class sheshiyuanyi {
      *
      * @return
      */
-    public static JSONObject weatherIndex() {
+    public static List<WeatherIndex> weatherIndex() {
         File file = new File(System.getProperty("user.dir") + "\\src\\main\\resources\\weatherIndex.json");
 
         String json = null;
@@ -75,6 +86,22 @@ public class sheshiyuanyi {
             e.printStackTrace();
         }
 
-        return JSON.parseObject(json);
+        JSONObject jsonObject = JSON.parseObject(json);
+        String[] key = {"tem", "acc", "pre", "win", "ssd", "gst", "rhu", "prs", "evp", "sr"};
+        List<WeatherIndex> weatherIndices = new ArrayList<>();
+        for (String s : key) {
+            WeatherIndex weatherIndex = new WeatherIndex();
+            weatherIndex.setValue(jsonObject.getJSONObject(s).getString("value"));
+            JSONArray subIndex = jsonObject.getJSONObject(s).getJSONArray("subIndex");
+            if (subIndex.size() > 0) {
+                for (int i = 0; i < subIndex.size(); i++) {
+                    weatherIndex.setSubValue(subIndex.getJSONObject(i).getString("value"));
+                    weatherIndices.add(weatherIndex);
+                }
+            } else {
+                weatherIndices.add(weatherIndex);
+            }
+        }
+        return weatherIndices;
     }
 }
