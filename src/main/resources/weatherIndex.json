@@ -1,0 +1,79 @@
+{
+  "tem":{
+    "name": "气温",
+    "unit":"℃",
+    "precision":0.1,
+    "value":"air_temperature",
+    "subIndex": [{"name":"平均气温","value":"avg_tem"},{"name":"日最高气温","value":"max_tem"},{"name":"日最低气温","value":"min_tem"}]
+  },
+  "acc":{
+    "name": "积温",
+    "unit":"d·℃",
+    "precision":0.1,
+    "value":"accumulated_temperature",
+    "subIndex": []
+  },
+  "pre":{
+    "name": "降水",
+    "unit":"mm",
+    "precision":0.1,
+    "value":"precipitation",
+    "subIndex": [{"name":"20至20时降水量","value":"pre_20_20"},{"name":"20至8时降水量","value":"pre_20_8"},{"name":"8至20时降水量","value":"pre_8_20"}]
+  },
+  "win":{
+    "name": "风速",
+    "unit":"m/s",
+    "precision":0.1,
+    "value":"wind",
+    "subIndex": [{"name":"平均风速","value":"avg_win"},{"name":"最大风速","value":"max_win"},{"name":"极大风速","value":"ext_win"}]
+  },
+  "ssd":{
+    "name": "日照时数",
+    "unit":"h",
+    "precision":0.1,
+    "value":"sunshine_duration",
+    "subIndex": [{"name":"日照时数","value":"ssd"}]
+  },
+  "gst":{
+    "name": "0cm地温",
+    "unit":"℃",
+    "precision":0.1,
+    "value":"ground_surface_temperature",
+    "subIndex": [{"name":"平均地表气温","value":"avg_gst"},{"name":"日最高地表气温","value":"max_gst"},{"name":"日最低地表气温","value":"min_gst"}]
+  },
+  "ffs":{
+    "name": "无霜期",
+    "unit":"天",
+    "precision":1,
+    "value":"ground_surface_temperature",
+    "subIndex": []
+  },
+  "rhu":{
+    "name": "相对湿度",
+    "unit":"%",
+    "precision":1,
+    "value":"relative_humidity",
+    "subIndex": [{"name":"平均相对湿度","value":"avg_rhu"},{"name":"最小相对湿度","value":"min_rhu"}]
+  },
+  "prs":{
+    "name": "本站气压",
+    "unit":"hPa",
+    "precision":0.1,
+    "value":"air_pressure",
+    "subIndex": [{"name":"平均本站气压","value":"avg_prs"},{"name":"日最高本站气压","value":"max_prs"},{"name":"日最低本站气压","value":"min_prs"}]
+  },
+  "evp":{
+    "name": "蒸发",
+    "unit":"mm",
+    "precision":0.1,
+    "value":"evaporation",
+    "subIndex": [{"name":"小型蒸发量","value":"min_evp"},{"name":"大型蒸发量","value":"max_evp"}]
+  },
+  "sr":{
+    "name": "太阳辐射",
+    "unit":"MJ/m^2",
+    "precision":0.1,
+    "value":"solar_radiation",
+    "subIndex": [{"name":"日累计辐射","value":"sr"}]
+  }
+}
