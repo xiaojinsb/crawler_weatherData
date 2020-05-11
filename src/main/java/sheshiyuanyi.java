@@ -4,16 +4,18 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.FileUtils;
+import util.HttpUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import static util.JDBCUtil.closeConn;
-import static util.JDBCUtil.execQuery;
+import static util.CommonUtil.sleep;
+import static util.JDBCUtil.*;
 
 /**
  * @Author: Avalon
@@ -26,22 +28,114 @@ public class sheshiyuanyi {
     static String getWeatherData = "http://data.sheshiyuanyi.com/WeatherData/php/getWeatherData.php?action=";
 
     public static void main(String[] args) {
+
+        List<Map<String, String>> urlList = url();
+        List<String> dataUrl = dataUrl();
+        System.out.println(urlList.size());
+        System.out.println(dataUrl.size());
+
+        for (Map<String, String> m : urlList) {
+
+//            if (dataUrl.contains(m.get("url"))) {
+//                System.out.println("已采集");
+//            } else {
+//                try {
+//                    JSONObject jsonObject = JSONObject.parseObject(HttpUtil.httpGet(m.get("url"), "UTF-8"));
+//                    JSONArray jsonArray = jsonObject.getJSONArray(m.get("value"));
+//
+//                    System.out.println("年：" + m.get("year") + " 年 请求的站点：" + m.get("ids"));
+//                    System.out.println();
+//
+//                    String sql = "insert into data(ids, year, value, sup_value, url, json) VALUES (?,?,?,?,?,?)";
+//                    Connection conn = getConn();
+//                    PreparedStatement pst = null;
+//                    try {
+//                        conn.setAutoCommit(false);
+//                        pst = conn.prepareStatement(sql);
+//
+//                        pst.setString(1, m.get("ids"));
+//                        pst.setString(2, m.get("year"));
+//                        pst.setString(3, m.get("value"));
+//                        pst.setString(4, m.get("supValue"));
+//                        pst.setString(5, m.get("url"));
+//                        pst.setString(6, jsonArray.toString());
+//
+//                        pst.execute();
+//                        conn.commit();
+//                    } catch (SQLException e) {
+//                        e.printStackTrace();
+//                    } finally {
+//                        closeConn();
+//                    }
+//
+//                    sleep(6000);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+
+        }
+
+//        List<Region> regionList = region();
+//        List<WeatherIndex> weatherIndices = weatherIndex();
+//        List<Map<String, String>> url = new ArrayList<>();
+//        for (int i = 0; i < regionList.size(); i = i + 19) {
+//
+//            List<String> idList = new ArrayList<>();
+//            for (int j = i; j < i + 19; j++) {
+//                idList.add(String.valueOf(regionList.get(j).getStationId()));
+//            }
+//            System.out.println(String.join("-", idList));
+//            String sql = "SELECT url FROM data where ids = '" + String.join("-", idList) + "'";
+//            List<String> list = new ArrayList<>();
+//            ResultSet rs = execQuery(sql);
+//            try {
+//                while (rs.next()) {
+//                    list.add(rs.getString("url"));
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//            } finally {
+//                closeConn();
+//            }
+//            System.out.println(list.size());
+//        }
+    }
+
+    /**
+     * 生成 url
+     *
+     * @return
+     */
+    public static List<Map<String, String>> url() {
         List<Region> regionList = region();
         List<WeatherIndex> weatherIndices = weatherIndex();
-        for (int i = 0; i < regionList.size(); i++) {
-            int id = regionList.get(i).getStationId();
-            System.out.println("id: " + id);
+        List<Map<String, String>> url = new ArrayList<>();
+        for (int i = 0; i < regionList.size(); i = i + 19) {
+
+            List<String> idList = new ArrayList<>();
+            for (int j = i; j < i + 19; j++) {
+                idList.add(String.valueOf(regionList.get(j).getStationId()));
+            }
 
             for (WeatherIndex weatherIndex : weatherIndices) {
 
+                String action = "more";
+                if (Objects.equals(weatherIndex.getValue(), "accumulated_temperature")) {
+                    action = "moreAccTem";
+                }
                 for (int j = 1984; j <= 2018; j++) {
-                    System.out.println(j);
-                    System.out.println(getWeatherData+id);
+                    Map<String, String> map = new HashMap<>();
+                    map.put("ids", String.join("-", idList));
+                    map.put("year", String.valueOf(j));
+                    map.put("value", String.join("-", weatherIndex.getValue()));
+                    map.put("supValue", String.join("-", weatherIndex.getSubValue()));
+                    map.put("url", getWeatherData + action + "&staNum=" + String.join("-", idList) + "&index=" + weatherIndex.getValue() + "&subIndex=" + weatherIndex.getSubValue() + "&year=" + j + "&month=0");
+                    url.add(map);
                 }
             }
         }
-
-
+        return url;
     }
 
     /**
@@ -102,6 +196,28 @@ public class sheshiyuanyi {
                 weatherIndices.add(weatherIndex);
             }
         }
+        System.out.println(weatherIndices);
         return weatherIndices;
     }
+
+    /**
+     * 获取 data表里的 url
+     *
+     * @return
+     */
+    public static List<String> dataUrl() {
+        List<String> list = new ArrayList<>();
+        ResultSet rs = execQuery("SELECT url FROM data");
+        try {
+            while (rs.next()) {
+                list.add(rs.getString("url"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeConn();
+        }
+        return list;
+    }
+
 }
