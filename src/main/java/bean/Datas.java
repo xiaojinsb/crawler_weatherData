@@ -4,19 +4,21 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
  * @Author: Avalon
- * @Date: 20/5/6 17:44
+ * @Date: 20/5/6 15:51
  * @Description:
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class WeatherIndex {
-    String value;
-    String valueName;
-    String subValue;
-    String subValueName;
+public class Datas {
+
+  private String year;
+  private String url;
+  private String ids;
+  private String value;
+  private String supValue;
+  private byte[] json;
+
 }

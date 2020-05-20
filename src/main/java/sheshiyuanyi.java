@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static util.CommonUtil.gZip;
 import static util.CommonUtil.sleep;
 import static util.JDBCUtil.*;
 
@@ -36,70 +37,45 @@ public class sheshiyuanyi {
 
         for (Map<String, String> m : urlList) {
 
-//            if (dataUrl.contains(m.get("url"))) {
-//                System.out.println("已采集");
-//            } else {
-//                try {
-//                    JSONObject jsonObject = JSONObject.parseObject(HttpUtil.httpGet(m.get("url"), "UTF-8"));
-//                    JSONArray jsonArray = jsonObject.getJSONArray(m.get("value"));
-//
-//                    System.out.println("年：" + m.get("year") + " 年 请求的站点：" + m.get("ids"));
-//                    System.out.println();
-//
-//                    String sql = "insert into data(ids, year, value, sup_value, url, json) VALUES (?,?,?,?,?,?)";
-//                    Connection conn = getConn();
-//                    PreparedStatement pst = null;
-//                    try {
-//                        conn.setAutoCommit(false);
-//                        pst = conn.prepareStatement(sql);
-//
-//                        pst.setString(1, m.get("ids"));
-//                        pst.setString(2, m.get("year"));
-//                        pst.setString(3, m.get("value"));
-//                        pst.setString(4, m.get("supValue"));
-//                        pst.setString(5, m.get("url"));
-//                        pst.setString(6, jsonArray.toString());
-//
-//                        pst.execute();
-//                        conn.commit();
-//                    } catch (SQLException e) {
-//                        e.printStackTrace();
-//                    } finally {
-//                        closeConn();
-//                    }
-//
-//                    sleep(6000);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
+            if (dataUrl.contains(m.get("url"))) {
+                System.out.println("已采集");
+            } else {
+                try {
+
+                    JSONObject jsonObject = JSONObject.parseObject(HttpUtil.httpGet(m.get("url"), "UTF-8"));
+                    JSONArray jsonArray = jsonObject.getJSONArray(m.get("value"));
+
+                    String sql = "insert into data(year, url, ids, value, sup_value, json) VALUES (?,?,?,?,?,?)";
+                    Connection conn = getConn();
+                    PreparedStatement pst = null;
+                    try {
+                        conn.setAutoCommit(false);
+                        pst = conn.prepareStatement(sql);
+
+                        pst.setString(1, m.get("year"));
+                        pst.setString(2, m.get("url"));
+                        pst.setString(3, m.get("ids"));
+                        pst.setString(4, m.get("value"));
+                        pst.setString(5, m.get("supValue"));
+                        pst.setBytes(6, gZip(jsonArray.toString().getBytes()));
+
+                        pst.execute();
+                        conn.commit();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    } finally {
+                        closeConn();
+                    }
+                    System.out.println(m.get("url"));
+                    System.out.println(m.get("year") + " 年 站点：" + m.get("ids"));
+                    System.out.println();
+                    sleep(5000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 
         }
-
-//        List<Region> regionList = region();
-//        List<WeatherIndex> weatherIndices = weatherIndex();
-//        List<Map<String, String>> url = new ArrayList<>();
-//        for (int i = 0; i < regionList.size(); i = i + 19) {
-//
-//            List<String> idList = new ArrayList<>();
-//            for (int j = i; j < i + 19; j++) {
-//                idList.add(String.valueOf(regionList.get(j).getStationId()));
-//            }
-//            System.out.println(String.join("-", idList));
-//            String sql = "SELECT url FROM data where ids = '" + String.join("-", idList) + "'";
-//            List<String> list = new ArrayList<>();
-//            ResultSet rs = execQuery(sql);
-//            try {
-//                while (rs.next()) {
-//                    list.add(rs.getString("url"));
-//                }
-//            } catch (SQLException e) {
-//                e.printStackTrace();
-//            } finally {
-//                closeConn();
-//            }
-//            System.out.println(list.size());
-//        }
     }
 
     /**
@@ -119,7 +95,6 @@ public class sheshiyuanyi {
             }
 
             for (WeatherIndex weatherIndex : weatherIndices) {
-
                 String action = "more";
                 if (Objects.equals(weatherIndex.getValue(), "accumulated_temperature")) {
                     action = "moreAccTem";
@@ -184,19 +159,23 @@ public class sheshiyuanyi {
         String[] key = {"tem", "acc", "pre", "win", "ssd", "gst", "rhu", "prs", "evp", "sr"};
         List<WeatherIndex> weatherIndices = new ArrayList<>();
         for (String s : key) {
-            WeatherIndex weatherIndex = new WeatherIndex();
-            weatherIndex.setValue(jsonObject.getJSONObject(s).getString("value"));
             JSONArray subIndex = jsonObject.getJSONObject(s).getJSONArray("subIndex");
             if (subIndex.size() > 0) {
                 for (int i = 0; i < subIndex.size(); i++) {
+                    WeatherIndex weatherIndex = new WeatherIndex();
+                    weatherIndex.setValue(jsonObject.getJSONObject(s).getString("value"));
+                    weatherIndex.setValueName(jsonObject.getJSONObject(s).getString("name"));
                     weatherIndex.setSubValue(subIndex.getJSONObject(i).getString("value"));
+                    weatherIndex.setSubValueName(subIndex.getJSONObject(i).getString("name"));
                     weatherIndices.add(weatherIndex);
                 }
             } else {
+                WeatherIndex weatherIndex = new WeatherIndex();
+                weatherIndex.setValue(jsonObject.getJSONObject(s).getString("value"));
+                weatherIndex.setValueName(jsonObject.getJSONObject(s).getString("name"));
                 weatherIndices.add(weatherIndex);
             }
         }
-        System.out.println(weatherIndices);
         return weatherIndices;
     }
 
